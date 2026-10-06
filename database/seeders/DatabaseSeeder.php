@@ -3,23 +3,31 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Akun admin dibuat dari ADMIN_EMAIL dan ADMIN_PASSWORD di file .env,
+        // jadi tidak perlu membuat ulang lewat tinker setiap migrate:fresh.
+        $email = config('cafe.admin_email');
+        $password = config('cafe.admin_password');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        if ($email && $password) {
+            User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'name'              => 'Admin',
+                    'password'          => $password,
+                    'role'              => 'admin',
+                    'email_verified_at' => now(),
+                ]
+            );
+        }
+
+        $this->call([
+            MenuSeeder::class,
         ]);
     }
 }
