@@ -10,11 +10,15 @@ class OmzetChart extends ChartWidget
 {
     protected static ?int $sort = 2;
 
-    protected ?string $heading = 'Omzet 7 hari terakhir';
+    protected ?string $heading = 'Tren Omzet 7 Hari Terakhir';
+
+    protected ?string $description = 'Akumulasi pendapatan bersih harian (tidak termasuk pesanan batal)';
+
+    protected ?string $pollingInterval = '60s';
 
     protected ?string $maxHeight = '280px';
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'md' => 2,
         'xl' => 2,
     ];
@@ -44,8 +48,8 @@ class OmzetChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'        => 'Omzet',
-                    'data'         => $values,
+                    'label' => 'Omzet',
+                    'data' => $values,
                     'borderRadius' => 6,
                 ],
             ],
@@ -53,7 +57,7 @@ class OmzetChart extends ChartWidget
         ];
     }
 
-    protected function getOptions(): array | RawJs | null
+    protected function getOptions(): array|RawJs|null
     {
         return RawJs::make(<<<'JS'
         {

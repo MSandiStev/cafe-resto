@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\Orders\OrderResource;
 use App\Models\Order;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -12,40 +13,68 @@ class LatestOrders extends TableWidget
 {
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn () => Order::query()->latest()->limit(6))
-            ->heading('Pesanan terbaru')
+            ->query(fn () => Order::query()->latest()->limit(7))
+            ->heading('Pesanan Masuk Terbaru')
+            ->description('Daftar transaksi terkini dari pelanggan cafe & resto')
+            ->headerActions([
+                Action::make('view_all')
+                    ->label('Lihat Semua Pesanan →')
+                    ->url(fn (): string => OrderResource::getUrl('index'))
+                    ->color('gray'),
+            ])
             ->paginated(false)
-            ->poll('30s')
+            ->poll('20s')
             ->columns([
                 TextColumn::make('order_number')
-                    ->label('No. pesanan'),
+                    ->label('No. Pesanan')
+                    ->weight('bold')
+                    ->searchable(),
+
                 TextColumn::make('customer_name')
                     ->label('Pelanggan')
-                    ->description(fn (Order $record) => $record->customer_phone),
+                    ->description(fn (Order $record): ?string => $record->customer_phone ?: ($record->table_number ? 'Meja '.$record->table_number : null)),
+
                 TextColumn::make('type')
-                    ->label('Tipe')
+                    ->label('Tipe Pesanan')
                     ->badge()
-                    ->color('gray')
-                    ->formatStateUsing(fn (string $state) => Order::TYPES[$state] ?? $state),
+                    ->color(fn (string $state): string => match ($state) {
+                        'dine_in' => 'warning',
+                        'pickup' => 'info',
+                        'delivery' => 'primary',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => Order::TYPES[$state] ?? $state),
+
                 TextColumn::make('total')
-                    ->label('Total')
-                    ->money('IDR', locale: 'id', decimalPlaces: 0),
+                    ->label('Total Transaksi')
+                    ->money('IDR', locale: 'id', decimalPlaces: 0)
+                    ->weight('semibold'),
+
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn (string $state) => Order::STATUSES[$state] ?? $state)
-                    ->color(fn (string $state) => Order::STATUS_COLORS[$state] ?? 'gray'),
+                    ->formatStateUsing(fn (string $state): string => Order::STATUSES[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'danger',
+                        'processing' => 'warning',
+                        'ready' => 'info',
+                        'completed' => 'success',
+                        'cancelled' => 'gray',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('created_at')
-                    ->label('Waktu')
-                    ->since(),
+                    ->label('Waktu Masuk')
+                    ->since()
+                    ->color('gray'),
             ])
-            ->recordUrl(fn (Order $record) => OrderResource::getUrl('view', ['record' => $record]))
-            ->emptyStateHeading('Belum ada pesanan')
-            ->emptyStateDescription('Pesanan dari website akan muncul di sini.');
+            ->recordUrl(fn (Order $record): string => OrderResource::getUrl('view', ['record' => $record]))
+            ->emptyStateHeading('Belum ada pesanan terbaru')
+            ->emptyStateDescription('Pesanan dari pelanggan di website akan otomatis muncul di sini.');
     }
 }

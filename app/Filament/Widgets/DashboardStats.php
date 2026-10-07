@@ -14,11 +14,11 @@ class DashboardStats extends StatsOverviewWidget
 
     protected ?string $pollingInterval = '30s';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getStats(): array
     {
-        $ordersToday     = Order::whereDate('created_at', today())->count();
+        $ordersToday = Order::whereDate('created_at', today())->count();
         $ordersYesterday = Order::whereDate('created_at', today()->subDay())->count();
 
         $revenueToday = (int) Order::whereDate('created_at', today())
@@ -28,35 +28,49 @@ class DashboardStats extends StatsOverviewWidget
         $pending = Order::where('status', 'pending')->count();
 
         $availableMenu = Product::where('is_available', true)->count();
-        $totalMenu     = Product::count();
+        $totalMenu = Product::count();
 
         // Jumlah pesanan per hari selama 7 hari terakhir, untuk garis kecil di kartu.
         $perDay = Order::where('created_at', '>=', today()->subDays(6))
             ->get(['created_at'])
             ->groupBy(fn (Order $order) => $order->created_at->format('Y-m-d'));
 
-        $trend = [];
+        // Omzet per hari selama 7 hari terakhir untuk sparkline chart.
+        $revPerDay = Order::where('created_at', '>=', today()->subDays(6))
+            ->where('status', '!=', 'cancelled')
+            ->get(['created_at', 'total'])
+            ->groupBy(fn (Order $order) => $order->created_at->format('Y-m-d'));
+
+        $revTrend = [];
         for ($i = 6; $i >= 0; $i--) {
-            $trend[] = $perDay->get(today()->subDays($i)->format('Y-m-d'))?->count() ?? 0;
+            $revTrend[] = (int) ($revPerDay->get(today()->subDays($i)->format('Y-m-d'))?->sum('total') ?? 0);
         }
 
-        $diff = $ordersToday - $ordersYesterday;
+        $revenueYesterday = (int) Order::whereDate('created_at', today()->subDay())
+            ->where('status', '!=', 'cancelled')
+            ->sum('total');
+        $revDiff = $revenueToday - $revenueYesterday;
 
         return [
             Stat::make('Pesanan hari ini', $ordersToday)
                 ->description(match (true) {
-                    $diff > 0  => "{$diff} lebih banyak dari kemarin",
-                    $diff < 0  => abs($diff) . ' lebih sedikit dari kemarin',
-                    default    => 'Sama dengan kemarin',
+                    $diff > 0 => "+{$diff} dibanding kemarin",
+                    $diff < 0 => abs($diff).' lebih sedikit dari kemarin',
+                    default => 'Stabil dibanding kemarin',
                 })
                 ->descriptionIcon($diff >= 0 ? Heroicon::OutlinedArrowTrendingUp : Heroicon::OutlinedArrowTrendingDown)
                 ->color($diff >= 0 ? 'success' : 'danger')
                 ->chart($trend),
 
-            Stat::make('Omzet hari ini', 'Rp ' . number_format($revenueToday, 0, ',', '.'))
-                ->description('Tidak termasuk pesanan batal')
-                ->descriptionIcon(Heroicon::OutlinedBanknotes)
-                ->color('primary'),
+            Stat::make('Omzet hari ini', 'Rp '.number_format($revenueToday, 0, ',', '.'))
+                ->description(match (true) {
+                    $revDiff > 0 => '+Rp '.number_format($revDiff, 0, ',', '.').' dari kemarin',
+                    $revDiff < 0 => '-Rp '.number_format(abs($revDiff), 0, ',', '.').' dari kemarin',
+                    default => 'Sama dengan kemarin',
+                })
+                ->descriptionIcon($revDiff >= 0 ? Heroicon::OutlinedBanknotes : Heroicon::OutlinedArrowTrendingDown)
+                ->color($revDiff >= 0 ? 'success' : 'danger')
+                ->chart($revTrend),
 
             Stat::make('Perlu diproses', $pending)
                 ->description($pending > 0 ? 'Pesanan menunggu konfirmasi' : 'Semua pesanan sudah ditangani')
@@ -64,7 +78,7 @@ class DashboardStats extends StatsOverviewWidget
                 ->color($pending > 0 ? 'danger' : 'success'),
 
             Stat::make('Menu tersedia', "{$availableMenu} dari {$totalMenu}")
-                ->description($availableMenu < $totalMenu ? ($totalMenu - $availableMenu) . ' menu sedang dimatikan' : 'Semua menu aktif')
+                ->description($availableMenu < $totalMenu ? ($totalMenu - $availableMenu).' menu sedang dimatikan' : 'Semua menu aktif')
                 ->descriptionIcon(Heroicon::OutlinedShoppingBag)
                 ->color('gray'),
         ];

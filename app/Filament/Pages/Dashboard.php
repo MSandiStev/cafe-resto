@@ -7,26 +7,24 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $title = 'Ringkasan';
+    protected static ?string $title = 'Dashboard Operasional';
 
-    public function getHeading(): string | Htmlable | null
+    public function getHeading(): string|Htmlable|null
     {
-        $name = explode(' ', trim(auth()->user()?->name ?? 'Admin'))[0];
-
-        return 'Halo, ' . $name;
+        return 'Ringkasan Operasional & Penjualan';
     }
 
-    public function getSubheading(): string | Htmlable | null
+    public function getSubheading(): string|Htmlable|null
     {
-        return now()->locale('id')->translatedFormat('l, j F Y');
+        return 'Pantau metrik penjualan harian, pesanan pelanggan, dan performa menu secara real-time.';
     }
 
-    public function getColumns(): int | array
+    public function getColumns(): int|array
     {
         return [
             'default' => 1,
-            'md'      => 2,
-            'xl'      => 3,
+            'md' => 2,
+            'xl' => 3,
         ];
     }
 }
