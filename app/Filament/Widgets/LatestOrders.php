@@ -20,10 +20,10 @@ class LatestOrders extends TableWidget
         return $table
             ->query(fn () => Order::query()->latest()->limit(7))
             ->heading('Pesanan Masuk Terbaru')
-            ->description('Daftar transaksi terkini dari pelanggan cafe & resto')
+            ->description('7 pesanan terakhir.')
             ->headerActions([
                 Action::make('view_all')
-                    ->label('Lihat Semua Pesanan →')
+                    ->label('Lihat semua pesanan')
                     ->url(fn (): string => OrderResource::getUrl('index'))
                     ->color('gray'),
             ])

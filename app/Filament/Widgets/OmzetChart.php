@@ -10,9 +10,9 @@ class OmzetChart extends ChartWidget
 {
     protected static ?int $sort = 2;
 
-    protected ?string $heading = 'Tren Omzet 7 Hari Terakhir';
+    protected ?string $heading = 'Omzet 7 Hari Terakhir';
 
-    protected ?string $description = 'Akumulasi pendapatan bersih harian (tidak termasuk pesanan batal)';
+    protected ?string $description = 'Per hari, tidak termasuk pesanan batal.';
 
     protected ?string $pollingInterval = '60s';
 
@@ -50,7 +50,8 @@ class OmzetChart extends ChartWidget
                 [
                     'label' => 'Omzet',
                     'data' => $values,
-                    'borderRadius' => 6,
+                    'backgroundColor' => '#b91c1c',
+                    'borderRadius' => 4,
                 ],
             ],
             'labels' => $labels,

@@ -38,6 +38,18 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
+                // Jangan diam-diam mengubah pesanan: kalau stok berubah sejak menu dimasukkan keranjang
+        // (jumlah dikurangi atau menu habis), minta pelanggan memeriksa keranjang dulu.
+        $stockChanged = $lines->count() !== count($this->cart->items())
+            || $lines->contains(fn ($line) => $line->adjusted);
+
+        if ($stockChanged) {
+            $this->cart->prune();
+
+            return redirect()->route('cart.index')
+                ->with('error', 'Stok beberapa menu berubah. Periksa kembali jumlah pesanan Anda.');
+        }
+        
         $data = $request->validate([
             'customer_name'    => ['required', 'string', 'max:100'],
             'customer_phone'   => ['required', 'regex:/^(\+62|62|0)8[0-9]{8,12}$/'],

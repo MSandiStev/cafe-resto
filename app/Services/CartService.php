@@ -49,6 +49,17 @@ class CartService
         unset($cart[$product->id]);
         session([self::KEY => $cart]);
     }
+    /** Samakan isi session dengan keranjang yang valid (buang menu habis/dimatikan, batasi jumlah sesuai stok). */
+    public function prune(): void
+    {
+        $cart = [];
+
+        foreach ($this->lines() as $id => $line) {
+            $cart[$id] = ['qty' => $line->qty, 'note' => $line->note];
+        }
+
+        session([self::KEY => $cart]);
+    }
 
     public function clear(): void
     {

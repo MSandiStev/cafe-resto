@@ -7,16 +7,16 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $title = 'Dashboard Operasional';
+    protected static ?string $title = 'Dashboard';
 
     public function getHeading(): string|Htmlable|null
     {
-        return 'Ringkasan Operasional & Penjualan';
+        return 'Dashboard';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Pantau metrik penjualan harian, pesanan pelanggan, dan performa menu secara real-time.';
+        return null;
     }
 
     public function getColumns(): int|array
