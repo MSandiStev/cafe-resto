@@ -45,6 +45,32 @@ class ProductForm
                     ->minValue(0)
                     ->prefix('Rp'),
 
+                TextInput::make('initial_stock')
+                    ->label('Stok awal')
+                    ->numeric()
+                    ->integer()
+                    ->minValue(0)
+                    ->default(0)
+                    ->required()
+                    ->visibleOn('create')
+                    ->helperText('Perubahan stok berikutnya dilakukan lewat tombol "Tambah stok" atau "Koreksi stok" supaya tercatat di riwayat.'),
+
+                TextInput::make('stock')
+                    ->label('Stok saat ini')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visibleOn('edit')
+                    ->helperText('Ubah lewat tombol "Tambah stok" atau "Koreksi stok" di daftar menu.'),
+
+                TextInput::make('low_stock_threshold')
+                    ->label('Batas stok menipis')
+                    ->numeric()
+                    ->integer()
+                    ->minValue(0)
+                    ->default(5)
+                    ->required()
+                    ->helperText('Peringatan muncul saat stok sama dengan atau di bawah angka ini.'),
+
                 Textarea::make('description')
                     ->label('Deskripsi')
                     ->rows(4)
@@ -60,8 +86,9 @@ class ProductForm
                     ->columnSpanFull(),
 
                 Toggle::make('is_available')
-                    ->label('Tersedia')
-                    ->default(true),
+                    ->label('Tampil di menu')
+                    ->default(true)
+                    ->helperText('Saklar manual untuk menyembunyikan menu. Status "Habis" diatur otomatis dari stok.'),
 
                 Toggle::make('is_featured')
                     ->label('Tampil di menu favorit (beranda)'),

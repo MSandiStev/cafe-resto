@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
 use App\Services\CartService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private CartService $cart)
+    public function __construct(private CartService $cart, private StockService $stock)
     {
     }
 
@@ -38,7 +40,7 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
-                // Jangan diam-diam mengubah pesanan: kalau stok berubah sejak menu dimasukkan keranjang
+        // Jangan diam-diam mengubah pesanan: kalau stok berubah sejak menu dimasukkan keranjang
         // (jumlah dikurangi atau menu habis), minta pelanggan memeriksa keranjang dulu.
         $stockChanged = $lines->count() !== count($this->cart->items())
             || $lines->contains(fn ($line) => $line->adjusted);
@@ -49,7 +51,7 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')
                 ->with('error', 'Stok beberapa menu berubah. Periksa kembali jumlah pesanan Anda.');
         }
-        
+
         $data = $request->validate([
             'customer_name'    => ['required', 'string', 'max:100'],
             'customer_phone'   => ['required', 'regex:/^(\+62|62|0)8[0-9]{8,12}$/'],
@@ -66,33 +68,40 @@ class CheckoutController extends Controller
         $subtotal    = $this->cart->total();
         $deliveryFee = $data['type'] === 'delivery' ? config('cafe.delivery_fee') : 0;
 
-        $order = DB::transaction(function () use ($data, $lines, $subtotal, $deliveryFee, $request) {
-            $order = Order::create([
-                'user_id'          => $request->user()?->id,
-                'customer_name'    => $data['customer_name'],
-                'customer_phone'   => $data['customer_phone'],
-                'type'             => $data['type'],
-                'table_number'     => $data['type'] === 'dine_in' ? $data['table_number'] : null,
-                'delivery_address' => $data['type'] === 'delivery' ? $data['delivery_address'] : null,
-                'notes'            => $data['notes'] ?? null,
-                'subtotal'         => $subtotal,
-                'delivery_fee'     => $deliveryFee,
-                'total'            => $subtotal + $deliveryFee,
-            ]);
-
-            foreach ($lines as $line) {
-                $order->items()->create([
-                    'product_id'   => $line->product->id,
-                    'product_name' => $line->product->name,
-                    'price'        => $line->product->price,
-                    'qty'          => $line->qty,
-                    'note'         => $line->note,
-                    'subtotal'     => $line->subtotal,
+        try {
+            $order = DB::transaction(function () use ($data, $lines, $subtotal, $deliveryFee, $request) {
+                $order = Order::create([
+                    'user_id'          => $request->user()?->id,
+                    'customer_name'    => $data['customer_name'],
+                    'customer_phone'   => $data['customer_phone'],
+                    'type'             => $data['type'],
+                    'table_number'     => $data['type'] === 'dine_in' ? $data['table_number'] : null,
+                    'delivery_address' => $data['type'] === 'delivery' ? $data['delivery_address'] : null,
+                    'notes'            => $data['notes'] ?? null,
+                    'subtotal'         => $subtotal,
+                    'delivery_fee'     => $deliveryFee,
+                    'total'            => $subtotal + $deliveryFee,
                 ]);
-            }
 
-            return $order;
-        });
+                foreach ($lines as $line) {
+                    $order->items()->create([
+                        'product_id'   => $line->product->id,
+                        'product_name' => $line->product->name,
+                        'price'        => $line->product->price,
+                        'qty'          => $line->qty,
+                        'note'         => $line->note,
+                        'subtotal'     => $line->subtotal,
+                    ]);
+                }
+
+                // Kurangi stok di transaksi yang sama: kalau ada yang kurang, pesanan ikut dibatalkan (rollback).
+                $this->stock->deductForOrder($order);
+
+                return $order;
+            });
+        } catch (InsufficientStockException $e) {
+            return redirect()->route('cart.index')->with('error', $e->getMessage() . ' Silakan sesuaikan jumlah pesanan.');
+        }
 
         $this->cart->clear();
 

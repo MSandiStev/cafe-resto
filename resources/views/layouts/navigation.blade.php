@@ -3,7 +3,7 @@
         ['Beranda', route('home'), request()->routeIs('home')],
         ['Menu', route('menu.index'), request()->routeIs('menu.*')],
         ['Lacak pesanan', route('tracking.index'), request()->routeIs('tracking.*')],
-        ['Lokasi', '#lokasi', false],
+        ['Lokasi', route('home') . '#lokasi', false],
     ];
     $cartCount = app(\App\Services\CartService::class)->count();
 @endphp

@@ -11,12 +11,15 @@
     $current  = $now->format('H.i');
     $isOpen   = $current >= $openAt && $current < $closeAt;
     $nextOpen = $current < $openAt ? $openAt : $hours[$now->copy()->addDay()->isoWeekday()][0];
+
+    // Kategori yang masih punya menu tersedia.
+    $shownCategories = $categories->where('products_count', '>', 0);
 @endphp
 
 @section('content')
 
 {{-- Hero --}}
-<section class="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-12 md:grid-cols-12 md:items-end md:pt-20">
+<section class="mx-auto grid max-w-6xl gap-10 px-4 pb-14 pt-10 md:grid-cols-12 md:items-center md:pt-16">
     <div class="md:col-span-7">
         <p class="flex items-center gap-2 text-sm text-neutral-600">
             <span class="h-2 w-2 rounded-full {{ $isOpen ? 'bg-emerald-600' : 'bg-neutral-400' }}"></span>
@@ -27,18 +30,39 @@
             @endif
         </p>
 
-        <h1 class="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight text-neutral-900 sm:text-5xl md:text-6xl">
+        <h1 class="mt-5 text-4xl font-semibold leading-[1.1] tracking-tight text-neutral-900 sm:text-5xl">
             Pesan kopi dan makanan tanpa antre di kasir.
         </h1>
 
-        <p class="mt-6 max-w-md leading-relaxed text-neutral-600">
+        <p class="mt-5 max-w-md leading-relaxed text-neutral-600">
             Pilih menu, isi data pesanan di halaman checkout, lalu pantau statusnya dari ponsel.
         </p>
 
+        <form method="GET" action="{{ route('menu.index') }}" role="search" class="mt-8 flex max-w-md gap-2">
+            <label for="hero-search" class="sr-only">Cari menu</label>
+            <input id="hero-search" type="search" name="q" placeholder="Cari menu"
+                   class="min-w-0 flex-1 rounded-md border-neutral-300 px-4 py-3 text-sm placeholder-neutral-400 focus:border-brand-600 focus:ring-brand-600">
+            <button type="submit"
+                    class="rounded-md bg-brand-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
+                Cari
+            </button>
+        </form>
+
+        @if ($shownCategories->isNotEmpty())
+            <div class="mt-4 flex flex-wrap gap-2">
+                @foreach ($shownCategories->take(5) as $category)
+                    <a href="{{ route('menu.index', ['category' => $category->slug]) }}"
+                       class="rounded-full bg-white px-3.5 py-1.5 text-sm text-neutral-700 ring-1 ring-neutral-200 transition hover:ring-brand-600 hover:text-brand-600">
+                        {{ $category->name }}
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
         <div class="mt-8 flex flex-wrap items-center gap-6">
             <a href="{{ route('menu.index') }}"
-               class="rounded-md bg-brand-600 px-6 py-3 font-medium text-white transition hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
-                Lihat menu
+               class="rounded-md bg-neutral-900 px-6 py-3 font-medium text-white transition hover:bg-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900">
+                Lihat semua menu
             </a>
             <a href="{{ route('tracking.index') }}"
                class="font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition hover:decoration-brand-600">
@@ -61,144 +85,144 @@
     </div>
 </section>
 
-{{-- Promo (hanya tampil kalau ada promo yang sedang berjalan) --}}
-@if ($promos->isNotEmpty())
-<section class="border-t border-neutral-200">
-    <div class="mx-auto max-w-6xl px-4 py-10">
-        <h2 class="text-lg font-semibold text-neutral-900">Promo yang sedang berjalan</h2>
+{{-- Cara pesan --}}
+<section class="border-y border-neutral-200 bg-white">
+    <div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 text-sm md:grid-cols-3 md:gap-10">
+        <p class="text-neutral-600">
+            <span class="font-semibold text-neutral-900">Tiga cara menikmati.</span>
+            Makan di tempat, ambil sendiri, atau diantar ke alamat.
+        </p>
+        <p class="text-neutral-600">
+            <span class="font-semibold text-neutral-900">Ongkir Rp {{ number_format(config('cafe.delivery_fee'), 0, ',', '.') }}.</span>
+            Berlaku flat untuk pesanan antar. Dua tipe lainnya gratis.
+        </p>
+        <p class="text-neutral-600">
+            <span class="font-semibold text-neutral-900">Pantau pesanan.</span>
+            Status diperbarui dari dapur, bisa dicek lewat
+            <a href="{{ route('tracking.index') }}" class="text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:decoration-brand-600">halaman lacak</a>.
+        </p>
+    </div>
+</section>
 
-        <ul class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200">
-            @foreach ($promos as $promo)
-                <li>
-                    <a href="{{ $promo->product ? route('menu.show', $promo->product) : route('menu.index') }}"
-                       class="flex flex-wrap items-baseline gap-x-6 gap-y-1 py-4 transition hover:bg-white">
-                        @if ($promo->badge)
-                            <span class="shrink-0 font-semibold text-brand-600 sm:w-40">{{ $promo->badge }}</span>
-                        @endif
+{{-- Kategori --}}
+@if ($shownCategories->isNotEmpty())
+<section class="mx-auto max-w-6xl px-4 pt-14">
+    <h2 class="text-2xl font-semibold text-neutral-900">Belanja per kategori</h2>
 
-                        <span class="min-w-0 flex-1">
-                            <span class="block font-medium text-neutral-900">{{ $promo->title }}</span>
-                            @if ($promo->description)
-                                <span class="block text-sm text-neutral-500">{{ $promo->description }}</span>
-                            @endif
-                        </span>
-
-                        @if ($promo->ends_on)
-                            <span class="text-sm text-neutral-500">
-                                Sampai {{ $promo->ends_on->locale('id')->translatedFormat('j F Y') }}
-                            </span>
-                        @endif
-                    </a>
-                </li>
-            @endforeach
-        </ul>
+    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        @foreach ($shownCategories as $category)
+            <a href="{{ route('menu.index', ['category' => $category->slug]) }}"
+               class="group flex items-center justify-between rounded-lg bg-white px-5 py-4 ring-1 ring-neutral-200 transition hover:ring-brand-600">
+                <span>
+                    <span class="block font-semibold text-neutral-900 group-hover:text-brand-600">{{ $category->name }}</span>
+                    <span class="block text-sm text-neutral-500">{{ $category->products_count }} menu</span>
+                </span>
+                <span class="text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-brand-600" aria-hidden="true">→</span>
+            </a>
+        @endforeach
     </div>
 </section>
 @endif
 
-{{-- Menu --}}
-<section class="border-t border-neutral-200 bg-white">
-    <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-12">
+{{-- Promo (hanya tampil kalau ada promo yang sedang berjalan) --}}
+@if ($promos->isNotEmpty())
+<section class="mx-auto max-w-6xl px-4 pt-14">
+    <h2 class="text-2xl font-semibold text-neutral-900">Promo yang sedang berjalan</h2>
 
-        <div class="md:col-span-4 md:sticky md:top-24 md:self-start">
-            <h2 class="text-2xl font-semibold text-neutral-900">Menu favorit</h2>
-            <p class="mt-3 max-w-xs text-sm leading-relaxed text-neutral-600">
-                Pilihan dari dapur kami. Tambahkan ke keranjang langsung dari daftar ini.
-            </p>
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+        @foreach ($promos as $promo)
+            <a href="{{ $promo->product ? route('menu.show', $promo->product) : route('menu.index') }}"
+               class="flex flex-col overflow-hidden rounded-lg bg-white ring-1 ring-neutral-200 transition hover:ring-brand-600">
+                @if ($promo->product && $promo->product->image)
+                    <div class="aspect-[16/9] overflow-hidden bg-brand-50">
+                        <img src="{{ asset('storage/' . $promo->product->image) }}" alt="{{ $promo->product->name }}"
+                             loading="lazy" class="h-full w-full object-cover">
+                    </div>
+                @endif
 
-            @if (isset($categories) && $categories->isNotEmpty())
-                <ul class="mt-8 divide-y divide-neutral-200 border-y border-neutral-200 text-sm">
-                    @foreach ($categories as $category)
-                        <li>
-                            <a href="{{ route('menu.index', ['category' => $category->slug]) }}"
-                               class="flex items-center justify-between py-3 transition hover:text-brand-600">
-                                <span class="font-medium">{{ $category->name }}</span>
-                                <span class="text-neutral-500">{{ $category->products_count }}</span>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
+                <div class="flex flex-1 flex-col p-5">
+                    @if ($promo->badge)
+                        <span class="self-start rounded-md bg-brand-600 px-2 py-1 text-xs font-semibold text-white">{{ $promo->badge }}</span>
+                    @endif
 
-            <a href="{{ route('menu.index') }}"
-               class="mt-6 inline-block text-sm font-medium text-brand-600 underline underline-offset-4">
-                Lihat semua menu
+                    <p class="mt-3 font-semibold text-neutral-900">{{ $promo->title }}</p>
+
+                    @if ($promo->description)
+                        <p class="mt-1 text-sm text-neutral-500">{{ $promo->description }}</p>
+                    @endif
+
+                    <p class="mt-auto pt-4 text-sm text-neutral-500">
+                        @if ($promo->ends_on)
+                            Sampai {{ $promo->ends_on->locale('id')->translatedFormat('j F Y') }}
+                        @else
+                            Berlaku selama persediaan ada
+                        @endif
+                    </p>
+                </div>
             </a>
-        </div>
-
-        <div class="md:col-span-8">
-            @if (!isset($featured) || $featured->isEmpty())
-                <p class="text-neutral-500">
-                    Belum ada menu favorit. Tandai menu sebagai unggulan lewat panel admin.
-                </p>
-            @else
-                <ul class="divide-y divide-neutral-200 border-y border-neutral-200">
-                    @foreach ($featured as $product)
-                        <li class="flex items-center gap-4 py-5">
-                            <a href="{{ route('menu.show', $product) }}" aria-hidden="true" tabindex="-1"
-                               class="block h-16 w-16 shrink-0 overflow-hidden rounded-md bg-brand-50">
-                                @if ($product->image)
-                                    <img src="{{ asset('storage/' . $product->image) }}" alt="" loading="lazy"
-                                         class="h-full w-full object-cover">
-                                @else
-                                    <span class="flex h-full w-full items-center justify-center text-xl font-semibold text-brand-600">
-                                        {{ mb_substr($product->name, 0, 1) }}
-                                    </span>
-                                @endif
-                            </a>
-
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-baseline gap-3">
-                                    <a href="{{ route('menu.show', $product) }}"
-                                       class="font-semibold text-neutral-900 hover:text-brand-600">
-                                        {{ $product->name }}
-                                    </a>
-                                    <span class="flex-1 border-b border-dotted border-neutral-300"></span>
-                                    <span class="whitespace-nowrap font-semibold text-neutral-900">
-                                        Rp {{ number_format($product->price, 0, ',', '.') }}
-                                    </span>
-                                </div>
-                                <p class="mt-1 line-clamp-1 text-sm text-neutral-500">{{ $product->description }}</p>
-                            </div>
-
-                            <form method="POST" action="{{ route('cart.store', $product) }}">
-                                @csrf
-                                <input type="hidden" name="qty" value="1">
-                                <button type="submit" aria-label="Tambah {{ $product->name }} ke keranjang"
-                                        class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-800 transition hover:border-brand-600 hover:bg-brand-600 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
-                                    Tambah
-                                </button>
-                            </form>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
-
+        @endforeach
     </div>
+</section>
+@endif
+
+{{-- Menu terlaris (berdasarkan pesanan yang masuk; kosong untuk toko baru) --}}
+@if ($bestSellers->isNotEmpty())
+<section class="mx-auto max-w-6xl px-4 pt-14">
+    <div class="flex items-end justify-between gap-4">
+        <h2 class="text-2xl font-semibold text-neutral-900">Menu terlaris</h2>
+        <a href="{{ route('menu.index') }}"
+           class="text-sm font-medium text-brand-600 underline underline-offset-4">Lihat semua</a>
+    </div>
+
+    <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        @foreach ($bestSellers as $product)
+            <x-product-card :product="$product" badge="Terlaris" />
+        @endforeach
+    </div>
+</section>
+@endif
+
+{{-- Menu pilihan --}}
+<section class="mx-auto max-w-6xl px-4 pt-14">
+    <div class="flex items-end justify-between gap-4">
+        <h2 class="text-2xl font-semibold text-neutral-900">Menu pilihan</h2>
+        <a href="{{ route('menu.index') }}"
+           class="text-sm font-medium text-brand-600 underline underline-offset-4">Lihat semua</a>
+    </div>
+
+    @if ($featured->isEmpty())
+        <p class="mt-6 text-neutral-500">
+            Belum ada menu untuk ditampilkan. Tambahkan menu lewat panel admin.
+        </p>
+    @else
+        <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach ($featured as $product)
+                <x-product-card :product="$product"
+                                :badge="$product->created_at && $product->created_at->gt(now()->subDays(14)) ? 'Baru' : null" />
+            @endforeach
+        </div>
+    @endif
 </section>
 
 {{-- Kata pelanggan (hanya tampil kalau ada testimoni yang dipublikasikan) --}}
 @if ($testimonials->isNotEmpty())
-<section class="border-t border-neutral-200">
-    <div class="mx-auto max-w-6xl px-4 py-16">
-        <h2 class="text-2xl font-semibold text-neutral-900">Kata pelanggan</h2>
+<section class="mx-auto max-w-6xl px-4 pt-16">
+    <h2 class="text-2xl font-semibold text-neutral-900">Kata pelanggan</h2>
 
-        <div class="mt-8 grid gap-10 md:grid-cols-3">
-            @foreach ($testimonials as $testimonial)
-                <figure class="border-l-2 border-brand-600 pl-5">
-                    <blockquote class="leading-relaxed text-neutral-700">{{ $testimonial->body }}</blockquote>
-                    <figcaption class="mt-3 text-sm font-medium text-neutral-900">{{ $testimonial->name }}</figcaption>
-                </figure>
-            @endforeach
-        </div>
+    <div class="mt-8 grid gap-10 md:grid-cols-3">
+        @foreach ($testimonials as $testimonial)
+            <figure class="border-l-2 border-brand-600 pl-5">
+                <blockquote class="leading-relaxed text-neutral-700">{{ $testimonial->body }}</blockquote>
+                <figcaption class="mt-3 text-sm font-medium text-neutral-900">{{ $testimonial->name }}</figcaption>
+            </figure>
+        @endforeach
     </div>
 </section>
 @endif
 
 {{-- Jam buka dan lokasi --}}
-<section id="kunjungi" class="border-t border-neutral-200">
-    <div class="mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-12">
+<section id="lokasi" class="mx-auto mt-16 max-w-6xl scroll-mt-20 border-t border-neutral-200 px-4 pt-14">
+    <div class="grid gap-10 md:grid-cols-12">
 
         <div class="md:col-span-5">
             <h2 class="text-2xl font-semibold text-neutral-900">Kunjungi kami</h2>

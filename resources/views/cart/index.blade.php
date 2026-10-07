@@ -33,6 +33,9 @@
                         <p class="text-sm text-neutral-500">
                             Rp {{ number_format($line->product->price, 0, ',', '.') }}
                         </p>
+                        @if ($line->adjusted)
+                            <p class="mt-1 text-xs font-medium text-amber-600">Jumlah disesuaikan dengan stok yang tersisa.</p>
+                        @endif
                         @if ($line->note)
                             <p class="mt-1 text-xs text-neutral-500">Catatan: {{ $line->note }}</p>
                         @endif
@@ -42,7 +45,7 @@
                           class="flex items-center gap-2">
                         @csrf
                         @method('PATCH')
-                        <input type="number" name="qty" value="{{ $line->qty }}" min="0" max="99"
+                        <input type="number" name="qty" value="{{ $line->qty }}" min="0" max="{{ min(99, $line->product->stock) }}"
                                class="w-16 rounded-lg border-neutral-300 text-center text-sm focus:border-brand-600 focus:ring-brand-600">
                         <button type="submit"
                                 class="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium transition hover:border-brand-600 hover:text-brand-600">

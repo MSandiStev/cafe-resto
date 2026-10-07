@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\StockService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -36,7 +37,7 @@ class MenuSeeder extends Seeder
             );
 
             foreach ($menu[$categoryName] as [$name, $price, $desc, $featured]) {
-                Product::updateOrCreate(
+                $product = Product::updateOrCreate(
                     ['slug' => Str::slug($name)],
                     [
                         'category_id'  => $category->id,
@@ -47,6 +48,10 @@ class MenuSeeder extends Seeder
                         'is_available' => true,
                     ]
                 );
+
+                if ($product->wasRecentlyCreated) {
+                    app(StockService::class)->adjust($product, 30, 'initial', 'Stok awal (seeder)');
+                }
             }
         }
     }

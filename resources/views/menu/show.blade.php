@@ -24,7 +24,15 @@
             <p class="mt-5 leading-relaxed text-neutral-600">{{ $product->description }}</p>
         @endif
 
-        @if ($product->is_available)
+        @if ($product->is_available && $product->isSoldOut())
+            <p class="mt-8 rounded-lg bg-neutral-100 px-4 py-3 text-sm font-medium text-neutral-600">
+                Stok menu ini sedang habis.
+            </p>
+        @elseif ($product->is_available)
+            @if ($product->isLowStock())
+                <p class="mt-6 text-sm font-medium text-amber-600">Stok tinggal {{ $product->stock }}, segera pesan.</p>
+            @endif
+
             <form method="POST" action="{{ route('cart.store', $product) }}" class="mt-8 space-y-4">
                 @csrf
 
@@ -39,7 +47,7 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <input type="number" name="qty" value="{{ old('qty', 1) }}" min="1" max="99"
+                    <input type="number" name="qty" value="{{ old('qty', 1) }}" min="1" max="{{ min(99, $product->stock) }}"
                            aria-label="Jumlah"
                            class="w-20 rounded-lg border-neutral-300 text-center focus:border-brand-600 focus:ring-brand-600">
                     <button type="submit"

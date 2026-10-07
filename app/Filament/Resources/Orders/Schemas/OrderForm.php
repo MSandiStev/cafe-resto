@@ -23,7 +23,9 @@ class OrderForm
                             ->label('Status pesanan')
                             ->options(Order::STATUSES)
                             ->required()
-                            ->native(false),
+                            ->native(false)
+                            ->disabled(fn (?Order $record) => $record?->status === 'cancelled')
+                            ->helperText('Pesanan yang dibatalkan mengembalikan stok otomatis dan tidak bisa dibuka lagi.'),
                         Select::make('payment_status')
                             ->label('Status pembayaran')
                             ->options(Order::PAYMENT_STATUSES)

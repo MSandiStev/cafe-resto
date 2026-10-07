@@ -49,6 +49,7 @@ class CartService
         unset($cart[$product->id]);
         session([self::KEY => $cart]);
     }
+
     /** Samakan isi session dengan keranjang yang valid (buang menu habis/dimatikan, batasi jumlah sesuai stok). */
     public function prune(): void
     {
@@ -82,6 +83,7 @@ class CartService
 
         $products = Product::whereIn('id', array_keys($cart))
             ->where('is_available', true)
+            ->where('stock', '>', 0)
             ->get()
             ->keyBy('id');
 
@@ -90,14 +92,18 @@ class CartService
                 $product = $products->get($id);
 
                 if (! $product) {
-                    return null; // menu sudah dihapus atau habis
+                    return null; // menu sudah dihapus, dimatikan, atau stoknya habis
                 }
+
+                // Jumlah di keranjang tidak boleh melebihi stok yang tersisa.
+                $qty = min((int) $row['qty'], (int) $product->stock);
 
                 return (object) [
                     'product'  => $product,
-                    'qty'      => $row['qty'],
+                    'qty'      => $qty,
+                    'adjusted' => $qty < (int) $row['qty'],
                     'note'     => $row['note'] ?? null,
-                    'subtotal' => $product->price * $row['qty'],
+                    'subtotal' => $product->price * $qty,
                 ];
             })
             ->filter();

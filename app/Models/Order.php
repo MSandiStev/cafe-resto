@@ -52,6 +52,13 @@ class Order extends Model
 
             $order->order_number ??= $number;
         });
+
+        // Pesanan dibatalkan: stok yang tadi dikurangi dikembalikan otomatis.
+        static::updated(function (Order $order) {
+            if ($order->wasChanged('status') && $order->status === 'cancelled') {
+                app(\App\Services\StockService::class)->restoreForOrder($order);
+            }
+        });
     }
 
     public function getRouteKeyName(): string
@@ -62,6 +69,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
     }
 
     public function typeLabel(): string

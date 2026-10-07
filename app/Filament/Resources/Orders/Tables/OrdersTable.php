@@ -46,7 +46,9 @@ class OrdersTable
                 SelectColumn::make('status')
                     ->label('Status')
                     ->options(Order::STATUSES)
-                    ->selectablePlaceholder(false),
+                    ->selectablePlaceholder(false)
+                    // Pesanan batal sudah mengembalikan stok, jadi statusnya dikunci.
+                    ->disabled(fn (Order $record) => $record->status === 'cancelled'),
             ])
             ->filters([
                 SelectFilter::make('status')
