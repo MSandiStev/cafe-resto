@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -27,8 +26,8 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login(Login::class)
-            ->brandName(config('app.name') . ' Admin')
+            // Login memakai halaman login customer (route 'login').
+            ->brandName(config('app.name').' Admin')
             ->font('Poppins')
             ->colors([
                 'primary' => Color::Red,
@@ -37,12 +36,6 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): string => view('filament.admin-styles')->render(),
-            )
-            ->renderHook(
-                PanelsRenderHook::SIMPLE_LAYOUT_START,
-                fn (): string => filament()->auth()->check()
-                    ? ''
-                    : view('filament.login-brand')->render(),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

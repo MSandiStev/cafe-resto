@@ -14,8 +14,12 @@ class MenuController extends Controller
 
         $products = Product::with('category')
             ->where('is_available', true)
-            ->when($request->category, fn ($q, $slug) =>
-                $q->whereHas('category', fn ($c) => $c->where('slug', $slug))
+            ->when($request->category, fn ($q, $slug) => $q->whereHas('category', fn ($c) => $c->where('slug', $slug))
+            )
+            ->when($request->q, fn ($q, $term) => $q->where(fn ($w) => $w
+                ->where('name', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%")
+            )
             )
             ->orderBy('name')
             ->get();
@@ -26,6 +30,7 @@ class MenuController extends Controller
     public function show(Product $product)
     {
         $product->load('category');
+
         return view('menu.show', compact('product'));
     }
 }

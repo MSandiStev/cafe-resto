@@ -9,7 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
-// --- Halaman publik ---
+// --- Halaman Publik ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
 Route::get('/menu/{product}', [MenuController::class, 'show'])->name('menu.show');
@@ -20,17 +20,17 @@ Route::post('/keranjang/{product}', [CartController::class, 'store'])->name('car
 Route::patch('/keranjang/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/keranjang/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
 
-// --- Checkout dan lacak pesanan ---
+// --- Checkout dan Lacak Pesanan ---
 Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.create');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/pesanan/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
-Route::get('/lacak', [TrackingController::class, 'create'])->name('tracking.create');
+Route::get('/lacak', [TrackingController::class, 'create'])->name('tracking.index');
 Route::post('/lacak', [TrackingController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('tracking.store');
 
-// --- Akun pelanggan ---
+// --- Akun Pelanggan ---
 Route::get('/dashboard', [AccountController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -41,5 +41,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// --- Login, register, dll (Breeze) ---
+// --- Auth Routes (Breeze) ---
 require __DIR__.'/auth.php';
+Route::redirect('/admin/login', '/login');
